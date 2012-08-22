@@ -60,15 +60,15 @@ class Kohana_Database_MySQLi extends Database {
 				$this->_connection = new mysqli($hostname, $username, $password, $database, $port, $socket);
 			}
 		}
-		catch (ErrorException $e)
+		catch (Exception $e)
 		{
+			// No connection exists
+			$this->_connection = NULL;
+
 			throw new Database_Exception('[:code] :error', array(
 					':code' => $this->_connection->connect_errno,
 					':error' => $this->_connection->connect_error,
 				), $this->_connection->connect_errno);
-
-			// No connection exists
-			$this->_connection = NULL;
 		}
 
 		// \xFF is a better delimiter, but the PHP driver uses underscore
@@ -80,6 +80,19 @@ class Kohana_Database_MySQLi extends Database {
 		{
 			// Set the character set
 			$this->set_charset($this->_config['charset']);
+		}
+
+		if ( ! empty($this->_config['connection']['variables']))
+		{
+			// Set session variables
+			$variables = array();
+
+			foreach ($this->_config['connection']['variables'] as $var => $val)
+			{
+				$variables[] = 'SESSION '.$var.' = '.$this->quote($val);
+			}
+
+			$this->_connection->query('SET '.implode(', ', $variables));
 		}
 	}
 
@@ -116,6 +129,9 @@ class Kohana_Database_MySQLi extends Database {
 				{
 					// Clear the connection
 					$this->_connection = NULL;
+
+					// Clear the instance
+					parent::disconnect();
 				}
 			}
 		}

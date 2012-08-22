@@ -12,9 +12,13 @@ class Kohana_Database_MySQLi_Result extends Database_Result {
 
 	protected $_internal_row = 0;
 
-	public function __construct($result, $sql, $as_object)
+	public function __construct($result, $sql, $as_object = FALSE, array $params = NULL)
 	{
-		parent::__construct($result, $sql, $as_object);
+		parent::__construct($result, $sql, $as_object, $params);
+
+		if (empty($this->_object_params)) {
+			$this->_object_params = array();
+		}
 
 		// Find the number of rows in the result
 		$this->_total_rows = $result->num_rows;
@@ -46,7 +50,7 @@ class Kohana_Database_MySQLi_Result extends Database_Result {
 	public function current()
 	{
 		if ($this->_current_row !== $this->_internal_row AND ! $this->seek($this->_current_row))
-			return FALSE;
+			return NULL;
 
 		// Increment internal row for optimization assuming rows are fetched in order
 		$this->_internal_row++;
@@ -59,7 +63,7 @@ class Kohana_Database_MySQLi_Result extends Database_Result {
 		elseif (is_string($this->_as_object))
 		{
 			// Return an object of given class name
-			return $this->_result->fetch_object($this->_as_object);
+			return $this->_result->fetch_object($this->_as_object, $this->_object_params);
 		}
 		else
 		{
